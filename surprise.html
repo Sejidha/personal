@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Be My Valentine 💖</title>
+
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(135deg, #ffafcc, #ffc8dd);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Poppins", sans-serif;
+    overflow: hidden;
+  }
+
+  .card {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    width: 90%;
+    max-width: 350px;
+    z-index: 2;
+  }
+
+  button {
+    padding: 12px 28px;
+    border-radius: 25px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 6px 0;
+    transition: transform 0.2s ease;
+  }
+
+  #yes {
+    background: #ff4d6d;
+    color: white;
+  }
+
+  #no {
+    background: #ddd;
+    transition: left 0.7s ease-out, top 0.7s ease-out, opacity 0.4s ease;
+  }
+
+  /* Message */
+  .message {
+    margin-top: 18px;
+    font-size: 16px;
+    color: #ff4d6d;
+    font-weight: 500;
+    position: relative;
+    display: inline-block;
+    animation: pop 0.25s ease;
+  }
+
+  .message::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 2px;
+    background: #ff4d6d;
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: underline 0.4s ease forwards;
+  }
+
+  .final {
+    font-size: 14px;
+    color: #888;
+    font-weight: 400;
+  }
+
+  .final::after {
+    background: #ccc;
+  }
+
+  @keyframes pop {
+    from { transform: scale(0.95); }
+    to { transform: scale(1.05); }
+  }
+
+  @keyframes underline {
+    to { transform: scaleX(1); }
+  }
+
+  /* Heart pulse (NO clicks 1 & 2) */
+  .heart-pulse {
+    position: fixed;
+    font-size: 18px;
+    animation: pulse 0.8s ease forwards;
+    pointer-events: none;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
+  }
+
+  /* Heart burst (YES) */
+  .heart-burst {
+    position: fixed;
+    bottom: -20px;
+    font-size: 20px;
+    animation: floatUp 3s ease-in forwards;
+    pointer-events: none;
+  }
+
+  @keyframes floatUp {
+    to {
+      transform: translateY(-100vh) scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  .success {
+    display: none;
+  }
+
+  img {
+    width: 100%;
+    border-radius: 12px;
+    margin-top: 15px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card" id="mainCard">
+  <h2>Siddharth, will you be my Valentine? 💘</h2>
+  <button id="yes">Yes</button>
+  <button id="no">No</button>
+  <div id="messageContainer"></div>
+</div>
+
+<div class="card success" id="success">
+  <h2>Best decision ever 💖</h2>
+  <p>Siddharth, you just made my day 🥰</p>
+  <img src="https://media.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif">
+</div>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  (function(){
+    emailjs.init("6FTVS0HM42VOcOf5V"); // 🔁 replace
+  })();
+</script>
+
+<script>
+  const noBtn = document.getElementById("no");
+  const yesBtn = document.getElementById("yes");
+  const messageContainer = document.getElementById("messageContainer");
+  const mainCard = document.getElementById("mainCard");
+  const success = document.getElementById("success");
+
+  let noClicks = 0;
+  let yesScale = 1;
+
+  const messages = [
+    "Aww, are you sure? 👀",
+    "Okay… still teasing 😏",
+    "That button is tired 😮‍💨",
+    "One last chance 🫣",
+    "Congratulations, you unlocked… YES anyway 😌"
+  ];
+
+  /* iOS-safe sound */
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playBoop() {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.frequency.value = 420;
+    g.gain.value = 0.2;
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + 0.15);
+  }
+
+  function playChime() {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.frequency.value = 880;
+    g.gain.value = 0.25;
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + 0.25);
+  }
+
+  function showMessage(text, isFinal = false) {
+    messageContainer.innerHTML = "";
+    const msg = document.createElement("div");
+    msg.className = "message" + (isFinal ? " final" : "");
+    msg.textContent = text;
+    messageContainer.appendChild(msg);
+  }
+
+  function heartPulse() {
+    const h = document.createElement("div");
+    h.className = "heart-pulse";
+    h.textContent = "💗";
+    h.style.left = "50%";
+    h.style.top = "50%";
+    document.body.appendChild(h);
+    setTimeout(() => h.remove(), 800);
+  }
+
+  function heartBurst() {
+    for (let i = 0; i < 40; i++) {
+      const h = document.createElement("div");
+      h.className = "heart-burst";
+      h.textContent = "💖";
+      h.style.left = Math.random() * window.innerWidth + "px";
+      h.style.fontSize = (Math.random() * 20 + 14) + "px";
+      h.style.animationDuration = (Math.random() * 1.5 + 2) + "s";
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), 3000);
+    }
+  }
+
+  function moveNo() {
+    const x = Math.random() * (window.innerWidth - 120);
+    const y = Math.random() * (window.innerHeight - 60);
+    noBtn.style.position = "fixed";
+    noBtn.style.left = x + "px";
+    noBtn.style.top = y + "px";
+  }
+
+  function sendLog(actionText) {
+    emailjs.send("service_144trum", "template_ghzmhkv", {
+      action: actionText,
+      time: new Date().toLocaleString()
+    });
+  }
+
+  noBtn.addEventListener("click", () => {
+    audioCtx.resume();
+    playBoop();
+
+    noClicks++;
+    sendLog(`He clicked NO (${noClicks} time)`);
+
+    yesScale += 0.08;
+    yesBtn.style.transform = `scale(${yesScale})`;
+
+    if (noClicks <= 4) {
+      showMessage(messages[noClicks - 1]);
+      if (noClicks <= 2) heartPulse();
+      setTimeout(moveNo, 150);
+    } else {
+      showMessage(messages[4], true);
+      noBtn.style.opacity = "0";
+      setTimeout(() => noBtn.style.display = "none", 400);
+    }
+  });
+
+  yesBtn.addEventListener("click", () => {
+    audioCtx.resume();
+    playChime();
+    sendLog("He clicked YES 💖");
+
+    setTimeout(() => {
+      mainCard.style.display = "none";
+      success.style.display = "block";
+      heartBurst(); // 💖 celebration
+    }, 200);
+  });
+</script>
+
+</body>
+</html>
